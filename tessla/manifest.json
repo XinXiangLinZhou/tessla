@@ -1,0 +1,10 @@
+{
+  "domain": "tessla",
+  "name": "Tessla",
+  "codeowners": ["@Andy-Sandy, @Lyslo"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Andy-Sandy/TeSSLa-for-HA",
+  "iot_class": "local_polling",
+  "version": "1.0.0"
+}
