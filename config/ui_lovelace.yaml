@@ -1,0 +1,18 @@
+resources:
+  - url: /local/lovelace-multiline-text-input-card/lovelace-multiline-text-input-card.js
+    type: module
+
+  - type: custom:lovelace-multiline-text-input-card
+    autosave: true
+    entity: input_text.tessla
+    max_length: 50
+    min_length: 10
+    placeholder_text: 'Text entered here is going to be saved automatically when between 10 and 50 characters length.'
+    show_success_messages: false
+    title: Multiline text input card
+    buttons:
+      clear: 1
+      paste: 2
+      save: false
+    icons:
+      clear: mdi:other-icon
