@@ -86,6 +86,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 print(user_input)
                 print(d)
                 info = await validate_input(self.hass, d)
+                self.hass.spec = user_input[TESSLA_SPEC_INPUT]
                 return self.async_create_entry(title=info["title"], data=d)
 
             return self.async_show_form(step_id="user", data_schema=data_schema)
