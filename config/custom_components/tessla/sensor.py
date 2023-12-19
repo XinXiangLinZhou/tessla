@@ -27,6 +27,22 @@ async def async_setup_entry(hass, config_entry, add_entities):
     tessla_jar_file = os.path.join(
         "config", "custom_components", "tessla", "tessla.jar"
     )
+
+    if hass.spec is not None:
+        with open(tessla_spec_file, "w") as archivo:
+            p = hass.spec.split()
+            n = []
+            p_s = ["def", "out"]
+
+            for i in p:
+                if i in p_s:
+                    n.append("\n")
+                n.append(i)
+
+            result = " ".join(n)
+            archivo.write(result)
+            print("escritura con exito")
+    
     tessla_process = subprocess.Popen(
         [
             "//usr/bin/java",
