@@ -1,7 +1,7 @@
-'''- alias: "Actualizar Sensores Aleatorios"
+- alias: "Actualizar Sensores Aleatorios"
   trigger:
     - platform: time_pattern
-      seconds: "/40"  # Cambia esto según la frecuencia deseada (cada 20 segundos en este ejemplo)
+      seconds: "/30"
   action:
     - service: homeassistant.update_entity
-      entity_id: sensor.random_sensor_1, sensor.random_sensor_2'''
+      entity_id: sensor.random_sensor_1, sensor.random_sensor_2
