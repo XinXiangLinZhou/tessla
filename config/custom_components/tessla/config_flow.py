@@ -79,7 +79,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 if type_state != tipo.lower():
                     error_message = f"ERROR:El valor del entity debe ser del tipo {tipo}"
                     await show_error_notification(self.hass, error_message)
-                    raise Exception(f"El valor del entity debe ser del tipo {tipo}")
+                    raise Exception(error_message)
 
                 #guardar todos los datos introducido por el usuario a un nuevo diccionario
                 d=dict()
