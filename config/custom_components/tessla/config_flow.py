@@ -22,14 +22,17 @@ async def show_error_notification(hass, error_message):
         "create",
         {"title": "Error", "message": error_message},
     )
+
+
+
 async def validate_input(hass: HomeAssistant, data: dict) -> dict[str, Any]:
 
     """Validate the user input"""
     s="["
-    hass.stream=[]
+    hass.stream1=[]
     for i in range(hass.num):
-        hass.stream.insert(i,data[f"stream_name_input_{i+1}"])
-        s+=hass.stream[i]+","
+        hass.stream1.insert(i,data[f"stream_name_input_{i+1}"])
+        s+=hass.stream1[i]+","
     s+="]"
     streams=s[:-2] + s[-1]
     return {"title":streams}
@@ -85,16 +88,17 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 d=dict()
                 for i,s in enumerate(user_input[STREAM_NAMES_INPUT].split(",")):
                     d.update({f"stream_name_input_{i + 1}":s})
+                    d.update({f"stream":i+1})
                     self.hass.num=i+1
 
                 for i in range(self.hass.num):
                     d.update({f"entity_input_{i+1}":user_input[ENTITY_INPUT_1]})
-                self.hass.sensor=user_input[ENTITY_INPUT_1]
+                #self.hass.sensor=user_input[ENTITY_INPUT_1]
                 d.update({"tessla_spec_input":user_input[TESSLA_SPEC_INPUT]})
                 print(user_input)
                 print(d)
                 info = await validate_input(self.hass, d)
-                self.hass.spec = user_input[TESSLA_SPEC_INPUT]
+
                 return self.async_create_entry(title=info["title"], data=d)
 
             return self.async_show_form(step_id="user", data_schema=data_schema)
