@@ -15,7 +15,13 @@ TESSLA_SPEC_INPUT = "tessla_spec_input"
 # TODO:
 # 1) Add the ability to configure multiple entities with corresponding stream names
 
-
+#error message
+async def show_error_notification(hass, error_message):
+    await hass.services.async_call(
+        "persistent_notification",
+        "create",
+        {"title": "Error", "message": error_message},
+    )
 async def validate_input(hass: HomeAssistant, data: dict) -> dict[str, Any]:
 
     """Validate the user input"""
@@ -71,6 +77,8 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     type_state="str"
                 #comparar si son del mismo tipo
                 if type_state != tipo.lower():
+                    error_message = f"ERROR:El valor del entity debe ser del tipo {tipo}"
+                    await show_error_notification(self.hass, error_message)
                     raise Exception(f"El valor del entity debe ser del tipo {tipo}")
 
                 #guardar todos los datos introducido por el usuario a un nuevo diccionario
