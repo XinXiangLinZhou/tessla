@@ -1,0 +1,34 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+
+script: !include scripts.yaml
+scene: !include scenes.yaml
+automation: !include automations.yaml
+logger:
+  default: info
+  logs:
+    homeassistant.components.cloud: debug
+
+# sensor:
+#   - platform: random
+
+
+sensor:
+ - platform: template
+   sensors:
+     random_sensor_1:
+       friendly_name: Random Sensor 1
+       value_template: "{{ range(0, 30) | random }}"
+
+ - platform: template
+   sensors:
+     random_sensor_2:
+       friendly_name: Random Sensor 2
+       value_template: "{{ range(0, 30) | random }}"
+

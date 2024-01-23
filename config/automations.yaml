@@ -1,0 +1,7 @@
+- alias: "Actualizar Sensores Aleatorios"
+  trigger:
+    - platform: time_pattern
+      seconds: "/30"
+  action:
+    - service: homeassistant.update_entity
+      entity_id: sensor.random_sensor_1, sensor.random_sensor_2

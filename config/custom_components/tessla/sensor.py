@@ -9,8 +9,8 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_state_change
 from pathlib import Path
 from .const import DOMAIN
-
 _LOGGER = logging.getLogger(__name__)
+
 
 
 async def async_setup_entry(hass, config_entry, add_entities):
@@ -18,6 +18,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
     # Start the TeSSLa interpreter process with the given specification file.
     # the spec file needs to be correctly updated before starting the process
     # Path to tessla files
+
     tessla_spec_file = os.path.join(
         "config", "custom_components", "tessla", "specification.tessla"
     )
@@ -25,6 +26,27 @@ async def async_setup_entry(hass, config_entry, add_entities):
     tessla_jar_file = os.path.join(
         "config", "custom_components", "tessla", "tessla.jar"
     )
+    # 1) Get the data from the config entry
+    data = config_entry.data
+    hass.stream=[]
+    for i in range(data["stream"]):
+        hass.stream.insert(i,data[f"stream_name_input_{i+1}"])
+    hass.sensor=data["entity_input_1"]
+    hass.specification= data["tessla_spec_input"]
+    if hass.specification is not None:
+        with open(tessla_spec_file, "w") as archivo:
+            p = hass.specification.split()
+            n = []
+            p_s = ["def", "out"]
+
+            for i in p:
+                if i in p_s:
+                    n.append("\n")
+                n.append(i)
+
+            result = " ".join(n)
+            archivo.write(result)
+            print("escritura con exito")
 
     tessla_process = subprocess.Popen(
         [
@@ -40,13 +62,28 @@ async def async_setup_entry(hass, config_entry, add_entities):
         bufsize=1,  # Linebuffer!
         universal_newlines=True,
     )
+    hass.spec=[]
+
+    with open( tessla_spec_file, 'r') as file:
+        content = file.read()
+
+
+    specific_string = 'out'
+
+
+    indices = [i for i in range(len(content)) if content.startswith(specific_string, i)]
+
+    if indices:
+        for i,index in enumerate(indices):
+            substring = content[index + len(specific_string):]
+            hass.spec.insert(i,substring.split()[0])
+    file.close()
     _LOGGER.info("Tessla started")
 
     _LOGGER.warning(f"Config entry said: {config_entry.data}")
 
     # TODO: Config flow:
-    # 1) Get the data from the config entry
-    data = config_entry.data
+
     # 2) Create a list of the the entities with corresponding stream names.
     # 3) Add entities in HA.
     # 4) Refactor the code below by removing all hardcoded stuff, everything should be set up from the config entry
@@ -61,7 +98,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
     # Hardcoded for testing/example
     ts = TesslaSensor(hass, tessla_process)
     add_entities([ts])
-
     # Create a separate thread to read and print the TeSSLa output.
     # DON'T START IT YET to avoid race condition
     ts.set_output_thread(
@@ -71,20 +107,20 @@ async def async_setup_entry(hass, config_entry, add_entities):
     async def _async_state_changed(entity_id, old_state, new_state):
         if new_state is None:
             return
-
         utc_timestamp = new_state.last_changed
 
         timestamp = round(
             datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 1000
         )
-
+        if old_state is None:
+            return
         tessla_process.stdin.write(f"{timestamp}: x = {int(new_state.state)}\n")
         _LOGGER.warning(f"Tessla notified, value: {new_state}")
 
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
 
-    async_track_state_change(hass, "sensor.random_sensor", _async_state_changed)
+    async_track_state_change(hass, hass.sensor, _async_state_changed)
 
 
 class TesslaSensor(SensorEntity):
@@ -124,11 +160,19 @@ class TesslaReader:
         self.tessla = tessla
         self.hass = hass
 
+
     def output(self):
         """Handles the tessla output"""
         _LOGGER.info("Waiting for Tessla output.")
         # TODO: Replace this with the list from the config entry
-        ostreams = {"number": "number", "diff": "diff"}
+
+        ostreams={}
+        stream=len(self.hass.stream)
+        s=self.hass.stream
+        for i in range(stream):
+            r=self.hass.spec[i]
+            ostreams.update({r:s[i]})
+
         for line in self.tessla.stdout:
             _LOGGER.info(f"Tessla said: {line.strip()}.")
             parts = line.strip().split(" = ")
