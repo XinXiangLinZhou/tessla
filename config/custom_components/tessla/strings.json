@@ -3,9 +3,11 @@
       "step": {
           "user": {
               "data": {
-                  "entity_input_1": "Entity 1",
-                  "stream_name_input_1": "Stream 1",
-                  "tessla_spec_input": "TeSSLa Specification"
+                    "entity_input_1": "Entity 1",
+                    "entity_input_2": "Entity 2",
+                    "entity_input_3": "Entity 3",
+                    "stream_name_input_1": "Stream",
+                    "tessla_spec_input": "TeSSLa Specification"
               },
               "description": "Select your entities and enter a stream name. Please make sure the stream name matches the name of the input stream in your Tessla specification",
               "title": "Configure TeSSLa"
