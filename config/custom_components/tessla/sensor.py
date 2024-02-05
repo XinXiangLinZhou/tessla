@@ -28,11 +28,11 @@ async def async_setup_entry(hass, config_entry, add_entities):
     )
     # 1) Get the data from the config entry
     data = config_entry.data
-    hass.stream=[]
-    for i in range(data["stream"]):
-        hass.stream.insert(i,data[f"stream_name_input_{i+1}"])
-    hass.sensor=data["entity_input_1"]
+
+    hass.stream=data["stream"]
+    hass.sensor=data["entity_input"]
     hass.specification= data["tessla_spec_input"]
+    print(data["stream"])
     if hass.specification is not None:
         with open(tessla_spec_file, "w") as archivo:
             p = hass.specification.split()
@@ -47,6 +47,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
             result = " ".join(n)
             archivo.write(result)
             print("escritura con exito")
+    archivo.close()
 
     tessla_process = subprocess.Popen(
         [
@@ -62,21 +63,18 @@ async def async_setup_entry(hass, config_entry, add_entities):
         bufsize=1,  # Linebuffer!
         universal_newlines=True,
     )
-    hass.spec=[]
 
+    #get the string after out in specification file
+    hass.spec=[]
     with open( tessla_spec_file, 'r') as file:
         content = file.read()
-
-
     specific_string = 'out'
-
-
     indices = [i for i in range(len(content)) if content.startswith(specific_string, i)]
-
     if indices:
         for i,index in enumerate(indices):
             substring = content[index + len(specific_string):]
             hass.spec.insert(i,substring.split()[0])
+
     file.close()
     _LOGGER.info("Tessla started")
 
@@ -95,22 +93,22 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     threading.Thread(target=tlogger).start()
 
-    # Hardcoded for testing/example
+
     ts = TesslaSensor(hass, tessla_process)
     add_entities([ts])
+
     # Create a separate thread to read and print the TeSSLa output.
-    # DON'T START IT YET to avoid race condition
-    ts.set_output_thread(
-        threading.Thread(target=TesslaReader(hass, tessla_process).output)
-    )
+    tessla_reader_thread = threading.Thread(target=TesslaReader(hass, tessla_process).output)
+
+    # Set the reader thread to TesslaSensor
+    ts.set_output_thread(tessla_reader_thread)
 
     async def _async_state_changed(entity_id, old_state, new_state):
         if new_state is None:
             return
         utc_timestamp = new_state.last_changed
-
         timestamp = round(
-            datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 1000
+            datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 10000
         )
         if old_state is None:
             return
@@ -119,8 +117,10 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
+    for sensor in hass.sensor:
+        async_track_state_change(hass, sensor, _async_state_changed)
 
-    async_track_state_change(hass, hass.sensor, _async_state_changed)
+
 
 
 class TesslaSensor(SensorEntity):
@@ -166,6 +166,7 @@ class TesslaReader:
         _LOGGER.info("Waiting for Tessla output.")
         # TODO: Replace this with the list from the config entry
 
+        #add stream to ostreams for output
         ostreams={}
         stream=len(self.hass.stream)
         s=self.hass.stream
