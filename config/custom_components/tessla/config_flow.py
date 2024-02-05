@@ -10,6 +10,8 @@ from homeassistant.data_entry_flow import FlowResult
 from .const import DOMAIN
 
 ENTITY_INPUT_1 = "entity_input_1"
+ENTITY_INPUT_2 = "entity_input_2"
+ENTITY_INPUT_3 = "entity_input_3"
 STREAM_NAMES_INPUT = "stream_name_input_1"
 TESSLA_SPEC_INPUT = "tessla_spec_input"
 # TODO:
@@ -29,10 +31,8 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict[str, Any]:
 
     """Validate the user input"""
     s="["
-    hass.stream1=[]
-    for i in range(hass.num):
-        hass.stream1.insert(i,data[f"stream_name_input_{i+1}"])
-        s+=hass.stream1[i]+","
+    for i in data["stream"]:
+        s+=i+","
     s+="]"
     streams=s[:-2] + s[-1]
     return {"title":streams}
@@ -50,11 +50,14 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             for entity in self.hass.states.async_all():
                 entities.append(entity.entity_id)
             entities.sort()
+            entities.insert(0,"None")
             data_schema = vol.Schema(
                 {
 
                     vol.Required(STREAM_NAMES_INPUT): str,
                     vol.Required(ENTITY_INPUT_1): vol.In(entities),
+                    vol.Required(ENTITY_INPUT_2): vol.In(entities),
+                    vol.Required(ENTITY_INPUT_3): vol.In(entities),
                     vol.Required(TESSLA_SPEC_INPUT): str,
                 }
             )
@@ -86,17 +89,24 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
                 #guardar todos los datos introducido por el usuario a un nuevo diccionario
                 d=dict()
+                stream=[]
+                #add stream to data
                 for i,s in enumerate(user_input[STREAM_NAMES_INPUT].split(",")):
-                    d.update({f"stream_name_input_{i + 1}":s})
-                    d.update({f"stream":i+1})
+                    stream.insert(i,s)
                     self.hass.num=i+1
+                d.update({"stream":stream})
 
-                for i in range(self.hass.num):
-                    d.update({f"entity_input_{i+1}":user_input[ENTITY_INPUT_1]})
-                #self.hass.sensor=user_input[ENTITY_INPUT_1]
+                #add all entity_input to data
+                entity_input=[]
+                entity_input.insert(0,user_input[ENTITY_INPUT_1])
+                if(user_input[ENTITY_INPUT_2] != "None"):
+                    entity_input.insert(1,user_input[ENTITY_INPUT_2])
+                if(user_input[ENTITY_INPUT_3] != "None"):
+                    entity_input.insert(3,user_input[ENTITY_INPUT_3])
+                d.update({"entity_input":entity_input})
+                #add specification to data
                 d.update({"tessla_spec_input":user_input[TESSLA_SPEC_INPUT]})
-                print(user_input)
-                print(d)
+
                 info = await validate_input(self.hass, d)
 
                 return self.async_create_entry(title=info["title"], data=d)
