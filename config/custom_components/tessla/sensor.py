@@ -4,6 +4,7 @@ import subprocess
 import logging
 import datetime
 import os
+import tempfile
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_state_change
