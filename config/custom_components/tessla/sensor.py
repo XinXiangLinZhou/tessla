@@ -19,6 +19,8 @@ async def async_setup_entry(hass, config_entry, add_entities):
     # the spec file needs to be correctly updated before starting the process
     # Path to tessla files
 
+    dir_spec_file = os.path.join("config", "custom_components", "tessla")
+    
     tessla_spec_file = os.path.join(
         "config", "custom_components", "tessla", "specification.tessla"
     )
@@ -34,7 +36,10 @@ async def async_setup_entry(hass, config_entry, add_entities):
     hass.specification= data["tessla_spec_input"]
     print(data["stream"])
     if hass.specification is not None:
-        with open(tessla_spec_file, "w") as archivo:
+         with tempfile.NamedTemporaryFile(
+            mode="r+", prefix="tempo_", dir=dir_spec_file, delete=False
+        ) as archivo:
+            # with open(tessla_spec_file, "w") as archivo:
             p = hass.specification.split()
             n = []
             p_s = ["def", "out"]
@@ -46,36 +51,37 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
             result = " ".join(n)
             archivo.write(result)
+            archivo.flush()
             print("escritura con exito")
-    archivo.close()
+            tessla_process = subprocess.Popen(
+                [
+                    "//usr/bin/java",
+                    "-jar",
+                    tessla_jar_file,
+                    "interpreter",
+                    # tessla_spec_file,
+                    archivo.name,  # tempo file
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=1,  # Linebuffer!
+                universal_newlines=True,
+            )
+            hass.spec = []
+            # with open(tessla_spec_file, "r") as file:  # tempo file
+            archivo.seek(0)
+            content = archivo.read()
 
-    tessla_process = subprocess.Popen(
-        [
-            "//usr/bin/java",
-            "-jar",
-            tessla_jar_file,
-            "interpreter",
-            tessla_spec_file,
-        ],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        bufsize=1,  # Linebuffer!
-        universal_newlines=True,
-    )
+            specific_string = "out"
+            indices = [i for i in range(len(content)) if content.startswith(specific_string, i)]
 
-    #get the string after out in specification file
-    hass.spec=[]
-    with open( tessla_spec_file, 'r') as file:
-        content = file.read()
-    specific_string = 'out'
-    indices = [i for i in range(len(content)) if content.startswith(specific_string, i)]
-    if indices:
-        for i,index in enumerate(indices):
-            substring = content[index + len(specific_string):]
-            hass.spec.insert(i,substring.split()[0])
-
-    file.close()
+            if indices:
+                for i, index in enumerate(indices):
+                    substring = content[index + len(specific_string) :]
+                    hass.spec.insert(i, substring.split()[0])
+            # file.close()
+            archivo.close()
     _LOGGER.info("Tessla started")
 
     _LOGGER.warning(f"Config entry said: {config_entry.data}")
