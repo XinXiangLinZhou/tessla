@@ -100,13 +100,15 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     threading.Thread(target=tlogger).start()
 
-
     ts = TesslaSensor(hass, tessla_process)
     add_entities([ts])
 
     # Create a separate thread to read and print the TeSSLa output.
     tessla_reader_thread = threading.Thread(target=TesslaReader(hass, tessla_process).output)
 
+    #start thread
+    tessla_reader_thread.start()
+    
     # Set the reader thread to TesslaSensor
     ts.set_output_thread(tessla_reader_thread)
 
@@ -154,7 +156,6 @@ class TesslaSensor(SensorEntity):
     @property
     def state(self):
         if not self.running and self.t is not None:
-            self.t.start()
             self.running = True
             self._state = "Running"
         return self._state
