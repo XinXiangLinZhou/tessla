@@ -80,7 +80,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 elif ('.' in state) and (state.replace('.', '', 1).isdigit()):
                     type_state="float"
                 else:
-                    type_state="str"
+                    type_state="string"
                 #comparar si son del mismo tipo
                 if type_state != tipo.lower():
                     error_message = f"ERROR:El valor del entity debe ser del tipo {tipo}"
