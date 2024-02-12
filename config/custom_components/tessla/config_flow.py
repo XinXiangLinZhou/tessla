@@ -75,6 +75,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     tipo = substring.strip('[]')
                 #guardar el tipo del valor del entity
                 state=self.hass.states.get(user_input[ENTITY_INPUT_1]).state
+
                 if state.isdigit():
                     type_state="int"
                 elif ('.' in state) and (state.replace('.', '', 1).isdigit()):
@@ -100,10 +101,20 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 entity_input=[]
                 entity_input.insert(0,user_input[ENTITY_INPUT_1])
                 if(user_input[ENTITY_INPUT_2] != "None"):
+                    if self.hass.states.get(user_input[ENTITY_INPUT_1]).entity_id==self.hass.states.get(user_input[ENTITY_INPUT_1]).entity_id:
+                        error_message = f"ERROR: entity1 y entity2 deben ser diferente"
+                        await show_error_notification(self.hass, error_message)
                     entity_input.insert(1,user_input[ENTITY_INPUT_2])
                 if(user_input[ENTITY_INPUT_3] != "None"):
+                    if self.hass.states.get(user_input[ENTITY_INPUT_1]).entity_id==self.hass.states.get(user_input[ENTITY_INPUT_3]).entity_id or self.hass.states.get(user_input[ENTITY_INPUT_2]).entity_id==self.hass.states.get(user_input[ENTITY_INPUT_3]).entity_id:
+                        error_message = f"ERROR: Los entity deben ser diferente"
+                        await show_error_notification(self.hass, error_message)
                     entity_input.insert(3,user_input[ENTITY_INPUT_3])
+                if entity_input.count()!=stream.count():
+                    error_message = f"ERROR: Numero del stream introducido no coincide con el numero del entity elegido"
+                    await show_error_notification(self.hass, error_message)
                 d.update({"entity_input":entity_input})
+
                 #add specification to data
                 d.update({"tessla_spec_input":user_input[TESSLA_SPEC_INPUT]})
 
