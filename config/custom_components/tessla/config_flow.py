@@ -101,7 +101,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 entity_input=[]
                 entity_input.insert(0,user_input[ENTITY_INPUT_1])
                 if(user_input[ENTITY_INPUT_2] != "None"):
-                    if self.hass.states.get(user_input[ENTITY_INPUT_1]).entity_id==self.hass.states.get(user_input[ENTITY_INPUT_1]).entity_id:
+                    if self.hass.states.get(user_input[ENTITY_INPUT_1]).entity_id==self.hass.states.get(user_input[ENTITY_INPUT_2]).entity_id:
                         error_message = f"ERROR: entity1 y entity2 deben ser diferente"
                         await show_error_notification(self.hass, error_message)
                     entity_input.insert(1,user_input[ENTITY_INPUT_2])
