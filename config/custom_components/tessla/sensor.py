@@ -7,11 +7,10 @@ import os
 import tempfile
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.event import async_track_state_change, async_track_point_in_time
 from pathlib import Path
 from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
-
 
 
 async def async_setup_entry(hass, config_entry, add_entities):
@@ -21,7 +20,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
     # Path to tessla files
 
     dir_spec_file = os.path.join("config", "custom_components", "tessla")
-    
+
     tessla_spec_file = os.path.join(
         "config", "custom_components", "tessla", "specification.tessla"
     )
@@ -35,7 +34,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
     hass.stream=data["stream"]
     hass.sensor=data["entity_input"]
     hass.specification= data["tessla_spec_input"]
-    print(data["stream"])
+    hass.stream_output=None
     if hass.specification is not None:
          with tempfile.NamedTemporaryFile(
             mode="r+", prefix="tempo_", dir=dir_spec_file, delete=False
@@ -81,7 +80,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
                 for i, index in enumerate(indices):
                     substring = content[index + len(specific_string) :]
                     hass.spec.insert(i, substring.split()[0])
-            # file.close()
             archivo.close()
     _LOGGER.info("Tessla started")
 
@@ -102,32 +100,43 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     ts = TesslaSensor(hass, tessla_process)
     add_entities([ts])
-
     # Create a separate thread to read and print the TeSSLa output.
     tessla_reader_thread = threading.Thread(target=TesslaReader(hass, tessla_process).output)
-
     #start thread
     tessla_reader_thread.start()
-    
+
     # Set the reader thread to TesslaSensor
     ts.set_output_thread(tessla_reader_thread)
 
-    async def _async_state_changed(entity_id, old_state, new_state):
+    async def _async_state_changed(entity_id, old_state, new_state,hass=hass):
         if new_state is None:
             return
-        utc_timestamp = new_state.last_changed
-        timestamp = round(
-            datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 10000
-        )
+        #when state of sensor =unknown or none
         if old_state is None:
             return
-        tessla_process.stdin.write(f"{timestamp}: x = {int(new_state.state)}\n")
+        if new_state.state.isdigit():
+            coma=""
+        elif ('.' in new_state.state) and (new_state.state.replace('.', '', 1).isdigit()):
+            coma=""
+        else:
+            coma='"'
+        utc_timestamp = new_state.last_changed
+        timestamp = round(
+             datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 10000
+        )
+
+        tessla_process.stdin.write(f"{timestamp}: x = {coma}{(new_state.state)}{coma}\n")
+        #save to known witch stream is changes
+        hass.stream_out=new_state.entity_id
         _LOGGER.warning(f"Tessla notified, value: {new_state}")
+
+
 
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
-    for sensor in hass.sensor:
-        async_track_state_change(hass, sensor, _async_state_changed)
+
+    for i,sensor in enumerate(hass.sensor):
+         async_track_state_change(hass, sensor, _async_state_changed)
 
 
 
@@ -177,10 +186,14 @@ class TesslaReader:
         #add stream to ostreams for output
         ostreams={}
         stream=len(self.hass.stream)
-        s=self.hass.stream
         for i in range(stream):
             r=self.hass.spec[i]
-            ostreams.update({r:s[i]})
+            ostreams.update({r:r})
+
+        #para poder sacar cual es el stream y sensor que estan cambiando
+        s={}
+        for i,sensor in enumerate(self.hass.sensor):
+            s.update({sensor:self.hass.stream[i]})
 
         for line in self.tessla.stdout:
             _LOGGER.info(f"Tessla said: {line.strip()}.")
@@ -192,10 +205,10 @@ class TesslaReader:
             # Only do something if the output has been configured
             if output_name in ostreams:
                 value = parts[1]
-                entity_id = f"{DOMAIN}.{ostreams[output_name]}"
+                entity_id = f"{DOMAIN}.{s[self.hass.stream_out]}_{output_name}"
                 entity_state = value.strip()
                 self.hass.states.set(entity_id, entity_state)
-
                 _LOGGER.warning("Created new entity: %s=%s", entity_id, entity_state)
+
             else:
                 _LOGGER.warning("Ignored event (No mapping for this output stream))")
