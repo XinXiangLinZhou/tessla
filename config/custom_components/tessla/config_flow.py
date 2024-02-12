@@ -110,11 +110,11 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         error_message = f"ERROR: Los entity deben ser diferente"
                         await show_error_notification(self.hass, error_message)
                     entity_input.insert(3,user_input[ENTITY_INPUT_3])
+
+                d.update({"entity_input":entity_input})
                 if entity_input.count()!=stream.count():
                     error_message = f"ERROR: Numero del stream introducido no coincide con el numero del entity elegido"
                     await show_error_notification(self.hass, error_message)
-                d.update({"entity_input":entity_input})
-
                 #add specification to data
                 d.update({"tessla_spec_input":user_input[TESSLA_SPEC_INPUT]})
 
