@@ -50,6 +50,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
                 n.append(i)
 
             result = " ".join(n)
+            archivo.write("in h: Events[Unit]\n")
             archivo.write(result)
             archivo.flush()
             print("escritura con exito")
@@ -133,8 +134,10 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
         tessla_process.stdin.write(
             f"{timestamp}: x = {coma}{(new_state.state)}{coma}\n"
+            f"{timestamp + 1}: h\n"
         )
         _LOGGER.warning(f"Tessla notified, value: {new_state}")
+        _LOGGER.warning(f"{timestamp}: x = {coma}{(new_state.state)}{coma}\n")
 
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
