@@ -112,15 +112,15 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 # add all entity_input to data
                 entity_input = []
                 entity_input.insert(0, user_input[ENTITY_INPUT_1])
-                if user_input[ENTITY_INPUT_2] != "None":
+                if user_input[ENTITY_INPUT_2] is not None:
                     entity_input.insert(1, user_input[ENTITY_INPUT_2])
-                if user_input[ENTITY_INPUT_3] != "None":
-                    entity_input.insert(3, user_input[ENTITY_INPUT_3])
+                if user_input[ENTITY_INPUT_3] is not None:
+                    entity_input.insert(2, user_input[ENTITY_INPUT_3])
 
                 d.update({"entity_input": entity_input})
-                if len(entity_input) != len(stream):
-                    error_message = f"ERROR: Numero del stream introducido no coincide con el numero del entity elegido"
-                    await show_error_notification(self.hass, error_message)
+                # if len(entity_input) != len(stream):
+                #    error_message = f"ERROR: Numero del stream introducido no coincide con el numero del entity elegido"
+                #    await show_error_notification(self.hass, error_message)
                 # add specification to data
                 d.update({"tessla_spec_input": user_input[TESSLA_SPEC_INPUT]})
 
@@ -131,4 +131,3 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=data_schema)
         except Exception as e:
             print(e)
-
