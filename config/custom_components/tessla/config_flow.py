@@ -62,32 +62,6 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors = {}
 
             if user_input is not None:
-                # sacar el tipo del specification introducido
-                specification = user_input[TESSLA_SPEC_INPUT]
-                specific_string = "Events"
-                index = specification.find(specific_string)
-
-                if index != -1:
-                    sub_content = specification[index + len(specific_string) :]
-                    substring = sub_content.split(" ")[0]
-                    tipo = substring.strip("[]")
-                # guardar el tipo del valor del entity
-                state = self.hass.states.get(user_input[ENTITY_INPUT_1]).state
-
-                if state.isdigit():
-                    type_state = "int"
-                elif ("." in state) and (state.replace(".", "", 1).isdigit()):
-                    type_state = "float"
-                else:
-                    type_state = "string"
-                # comparar si son del mismo tipo
-                if type_state != tipo.lower():
-                    error_message = (
-                        f"ERROR:El valor del entity debe ser del tipo {tipo}"
-                    )
-                    await show_error_notification(self.hass, error_message)
-                    raise Exception(error_message)
-
                 # guardar todos los datos introducido por el usuario a un nuevo diccionario
                 d = dict()
                 stream = []
@@ -103,27 +77,62 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         l.add(item)
                     return False
 
-                # if are same streams return error
+                # if are same name of streams return error
                 if has_duplicates(stream):
-                    error_message = f"ERROR: Los nombres del streams introducidos deben ser diferentes"
+                    error_message = f"ERROR: Los nombres de los streams introducidos deben ser diferentes\n"
+                    for i, s in enumerate(stream):
+                        error_message += f"stream{i+1}:{s}\n"
                     await show_error_notification(self.hass, error_message)
                 d.update({"stream": stream})
 
                 # add all entity_input to data
                 entity_input = []
                 entity_input.insert(0, user_input[ENTITY_INPUT_1])
-                if user_input[ENTITY_INPUT_2] is not None:
+                if user_input[ENTITY_INPUT_2] != "None":
                     entity_input.insert(1, user_input[ENTITY_INPUT_2])
-                if user_input[ENTITY_INPUT_3] is not None:
+                if user_input[ENTITY_INPUT_3] != "None":
                     entity_input.insert(2, user_input[ENTITY_INPUT_3])
 
                 d.update({"entity_input": entity_input})
-                # if len(entity_input) != len(stream):
-                #    error_message = f"ERROR: Numero del stream introducido no coincide con el numero del entity elegido"
-                #    await show_error_notification(self.hass, error_message)
+                # sacar el tipo del specification introducido
+                specification = user_input[TESSLA_SPEC_INPUT]
+                specific_string = "Events"
+                index = [
+                    i
+                    for i in range(len(specification))
+                    if specification.startswith(specific_string, i)
+                ]
+                if index:
+                    for i, ind in enumerate(index):
+                        sub_content = specification[ind + len(specific_string) :]
+                        substring = sub_content.split(" ")[0]
+                        tipo = substring.strip("[]")
+
+                        # guardar el tipo del valor del entity
+                        state = self.hass.states.get(entity_input[i]).state
+                        if state.isdigit():
+                            type_state = "int"
+                        elif ("." in state) and (state.replace(".", "", 1).isdigit()):
+                            type_state = "float"
+                        else:
+                            type_state = "string"
+                        # comparar si son del mismo tipo
+                        if type_state != tipo.lower():
+                            error_message = (
+                                f"ERROR:El valor del entity{i+1} debe ser del tipo {tipo}\n"
+                                f"Tipo del Entity{i+1}({entity_input[i]}): {type_state}\n"
+                            )
+                            await show_error_notification(self.hass, error_message)
+                            raise Exception(error_message)
+                if len(entity_input) != len(index):
+                    error_message = (
+                        f"ERROR: Numero del entity elegidos no coinciden con el numero input del fichero specification.tessla\n"
+                        f"entity: {entity_input}\n"
+                        f"Numeros de input del fichero: {len(index)}\n"
+                    )
+                    await show_error_notification(self.hass, error_message)
                 # add specification to data
                 d.update({"tessla_spec_input": user_input[TESSLA_SPEC_INPUT]})
-
                 info = await validate_input(self.hass, d)
 
                 return self.async_create_entry(title=info["title"], data=d)
@@ -131,3 +140,4 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=data_schema)
         except Exception as e:
             print(e)
+
