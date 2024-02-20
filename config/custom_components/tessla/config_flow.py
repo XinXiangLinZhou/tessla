@@ -49,7 +49,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             for entity in self.hass.states.async_all():
                 entities.append(entity.entity_id)
             entities.sort()
-            entities.insert(0, "None")
+            entities.insert(0, None)
             data_schema = vol.Schema(
                 {
                     vol.Required(STREAM_NAMES_INPUT): str,
@@ -88,9 +88,9 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 # add all entity_input to data
                 entity_input = []
                 entity_input.insert(0, user_input[ENTITY_INPUT_1])
-                if user_input[ENTITY_INPUT_2] != "None":
+                if user_input[ENTITY_INPUT_2] is not None:
                     entity_input.insert(1, user_input[ENTITY_INPUT_2])
-                if user_input[ENTITY_INPUT_3] != "None":
+                if user_input[ENTITY_INPUT_3] is not None:
                     entity_input.insert(2, user_input[ENTITY_INPUT_3])
 
                 d.update({"entity_input": entity_input})
