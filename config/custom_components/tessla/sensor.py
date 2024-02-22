@@ -32,6 +32,9 @@ async def async_setup_entry(hass, config_entry, add_entities):
     # 1) Get the data from the config entry
     data = config_entry.data
 
+    # FIXME: I am not sure of the data needs to be saved as part of the `hass`-object.
+    # Isn't it sufficient to just keep a local variable here with the lifetime of the running
+    # sensor/integration?
     hass.stream = data["stream"]
     hass.sensor = data["entity_input"]
     hass.specification = data["tessla_spec_input"]
@@ -40,6 +43,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
             mode="r+", prefix="tempo_", dir=dir_spec_file, delete=False
         ) as archivo:
             # with open(tessla_spec_file, "w") as archivo:
+            # FIXME: clean up code, rename variables, add documentation
             p = hass.specification.split()
             n = []
             p_s = ["def", "out"]
@@ -53,6 +57,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
             archivo.write("in h: Events[Unit]\n")
             archivo.write(result)
             archivo.flush()
+            # FIXME: logger.debug(), if at all?
             print("escritura con exito")
             tessla_process = subprocess.Popen(
                 [
@@ -74,6 +79,10 @@ async def async_setup_entry(hass, config_entry, add_entities):
             archivo.seek(0)
             content = archivo.read()
 
+            # FIXME: this looks like a loop over every byte of the input file? This is not efficient.
+            # It probably also picks up more `out` than it should, e.g. in the middle of identifiers.
+            # Either go through it line-by-line, and check that the line starts with `out`, or (better)
+            # use the regexp-library to find `out ` (note the trailing white-space!).
             specific_string = "out"
             indices = [
                 i for i in range(len(content)) if content.startswith(specific_string, i)
@@ -153,10 +162,12 @@ class TesslaSensor(SensorEntity):
 
     def __init__(self, hass, process):
         self._state = "-1"
+        # FIXME: Unused? Or document.
         self._hass = hass
         self.tessla = process
         self.j = 1
         self.t = None
+        # FIXME: Unused? Or document.
         self.running = False
 
     def set_output_thread(self, t):
@@ -184,14 +195,17 @@ class TesslaReader:
 
     def output(self):
         """Handles the tessla output"""
+        # FIXME: some of these should probably be `LOGGER.debug`.
         _LOGGER.info("Waiting for Tessla output.")
         # TODO: Replace this with the list from the config entry
 
         # add stream to ostreams for output
         ostreams = {}
+        # FIXME: don't use `hass`-object, pass `spec` in constructor instead?
         for spec in self.hass.spec:
             ostreams.update({spec: spec})
         s = ""
+        # FIXME: ditto
         for i in self.hass.stream:
             s += i
             s += "_"
@@ -209,6 +223,7 @@ class TesslaReader:
                 entity_id = f"{DOMAIN}.{s}{ostreams[output_name]}"
                 entity_state = value.strip()
                 self.hass.states.set(entity_id, entity_state)
+                # FIXME: message misleading, we're only posting a state-update.
                 _LOGGER.warning("Created new entity: %s=%s", entity_id, entity_state)
 
             else:
