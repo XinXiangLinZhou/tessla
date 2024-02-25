@@ -39,7 +39,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
         with tempfile.NamedTemporaryFile(
             mode="r+", prefix="tempo_", dir=dir_spec_file, delete=False
         ) as archivo:
-            # with open(tessla_spec_file, "w") as archivo:
             p = specification.split()
             n = []
             p_s = ["in", "def", "out"]
@@ -60,7 +59,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
                     "-jar",
                     tessla_jar_file,
                     "interpreter",
-                    # tessla_spec_file,
                     archivo.name,  # tempo file
                 ],
                 stdin=subprocess.PIPE,
@@ -217,7 +215,7 @@ class TesslaReader:
                 entity_id = f"{DOMAIN}.{s}{ostreams[output_name]}"
                 entity_state = value.strip()
                 self.hass.states.set(entity_id, entity_state)
-                _LOGGER.warning("Update entity: %s=%s", entity_id, entity_state)
+                _LOGGER.info("Update entity: %s=%s", entity_id, entity_state)
 
             else:
                 _LOGGER.warning("Ignored event (No mapping for this output stream))")
