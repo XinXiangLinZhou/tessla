@@ -11,6 +11,7 @@ from homeassistant.helpers.event import async_track_state_change
 from pathlib import Path
 from .const import DOMAIN
 import re
+import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -113,6 +114,8 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     # Set the reader thread to TesslaSensor
     ts.set_output_thread(tessla_reader_thread)
+    # save timestamp
+    data_timestamp = {}
 
     async def _async_state_changed(entity_id, old_state, new_state):
         # get witch sensor of integration is change
@@ -137,19 +140,36 @@ async def async_setup_entry(hass, config_entry, add_entities):
             datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 10000
         )
         s = sensor.index(entity_id)
-        tessla_process.stdin.write(
-            # specific_in[0]=h
-            f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
-            f"{timestamp + 1}: h\n"
+        data_timestamp.update(
+            {
+                timestamp: f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+            }
         )
+        data_timestamp.update({timestamp + 1: f"{timestamp + 1}: h\n"})
+        # tessla_process.stdin.write(
+        #     # specific_in[0]=h
+        #     f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+        #     f"{timestamp + 1}: h\n"
+        # )
         _LOGGER.warning(f"Tessla notified, value: {new_state}")
         _LOGGER.warning(f"{timestamp}: x = {coma}{(new_state.state)}{coma}\n")
 
+    async def event_listener():
+        while True:
+            # order from smallest to largest
+            timestamp_sort = sorted(data_timestamp.keys())
+            for clave in timestamp_sort:
+                tessla_process.stdin.write(data_timestamp[clave])
+                print(data_timestamp[clave])
+            data_timestamp.clear()
+            # wait 1s
+            await asyncio.sleep(1)
+
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
-
     for s in sensor:
         async_track_state_change(hass, s, _async_state_changed)
+    await event_listener()
 
 
 class TesslaSensor(SensorEntity):
