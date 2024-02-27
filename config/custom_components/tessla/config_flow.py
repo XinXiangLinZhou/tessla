@@ -79,7 +79,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
                 # if are same name of streams return error
                 if has_duplicates(stream):
-                    error_message = f"ERROR: Los nombres de los streams introducidos deben ser diferentes\n"
+                    error_message = f"ERROR: The name of the streams must be diferent\n"
                     for i, s in enumerate(stream):
                         error_message += f"stream{i+1}:{s}\n"
                     await show_error_notification(self.hass, error_message)
@@ -119,14 +119,14 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         # comparar si son del mismo tipo
                         if type_state != tipo.lower():
                             error_message = (
-                                f"ERROR:El valor del entity{i+1} debe ser del tipo {tipo}\n"
+                                f"ERROR:The value of the entity{i+1} must be the type {tipo}\n"
                                 f"Tipo del Entity{i+1}({entity_input[i]}): {type_state}\n"
                             )
                             await show_error_notification(self.hass, error_message)
                             raise Exception(error_message)
                 if len(entity_input) != len(index):
                     error_message = (
-                        f"ERROR: Numero del entity elegidos no coinciden con el numero input del fichero specification.tessla\n"
+                        f"ERROR: Number of the chosen entity does not match the input number of the file specification.tessla\n"
                         f"entity: {entity_input}\n"
                         f"Numeros de input del fichero: {len(index)}\n"
                     )
