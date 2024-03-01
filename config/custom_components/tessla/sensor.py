@@ -37,54 +37,54 @@ async def async_setup_entry(hass, config_entry, add_entities):
     sensor = data["entity_input"]
     specification = data["tessla_spec_input"]
     if specification is not None:
-        with tempfile.NamedTemporaryFile(
-            mode="r+", prefix="tempo_", dir=dir_spec_file, delete=False
-        ) as archivo:
-            p = specification.split()
-            n = []
-            p_s = ["in", "def", "out"]
-            for i in p:
-                if i in p_s:
-                    n.append(f"\n{i}")
-                else:
-                    n.append(f" {i}")
+        archivo = tempfile.NamedTemporaryFile(
+            mode="r+", prefix="tempo_", dir=dir_spec_file, delete=True
+        )
+        p = specification.split()
+        n = []
+        p_s = ["in", "def", "out"]
+        for i in p:
+            if i in p_s:
+                n.append(f"\n{i}")
+            else:
+                n.append(f" {i}")
 
-            result = "".join(n)
-            archivo.write("in h: Events[Unit]")
-            archivo.write(result)
-            archivo.flush()
-            print("escritura con exito")
-            tessla_process = subprocess.Popen(
-                [
-                    "//usr/bin/java",
-                    "-jar",
-                    tessla_jar_file,
-                    "interpreter",
-                    archivo.name,  # tempo file
-                ],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=1,  # Linebuffer!
-                universal_newlines=True,
-            )
-            # with open(tessla_spec_file, "r") as file:  # tempo file
-            archivo.seek(0)
+        result = "".join(n)
+        archivo.write("in h: Events[Unit]")
+        archivo.write(result)
+        archivo.flush()
 
-            # get string after out and in of the file specification
-            content = archivo.read()
-            specific_out = [
-                re.findall(r"^out\s(.+?)(?:\s|$)", linea)[0]
-                for linea in content.split("\n")
-                if re.findall(r"^out\s(.+?)(?:\s|$)", linea)
-            ]
+        _LOGGER.debug("escritura con exito")
+        tessla_process = subprocess.Popen(
+            [
+                "//usr/bin/java",
+                "-jar",
+                tessla_jar_file,
+                "interpreter",
+                archivo.name,  # tempo file
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,  # Linebuffer!
+            universal_newlines=True,
+        )
+        # with open(tessla_spec_file, "r") as file:  # tempo file
+        archivo.seek(0)
 
-            specific_in = [
-                re.findall(r"^in\s(.+?)(:)", linea)[0][0]
-                for linea in content.split("\n")
-                if re.findall(r"^in\s(.+?)(:)", linea)
-            ]
-            archivo.close()
+        # get string after out and in of the file specification
+        content = archivo.read()
+        specific_out = [
+            re.findall(r"^out\s(.+?)(?:\s|$)", linea)[0]
+            for linea in content.split("\n")
+            if re.findall(r"^out\s(.+?)(?:\s|$)", linea)
+        ]
+
+        specific_in = [
+            re.findall(r"^in\s(.+?)(:)", linea)[0][0]
+            for linea in content.split("\n")
+            if re.findall(r"^in\s(.+?)(:)", linea)
+        ]
 
     _LOGGER.info("Tessla started")
 
@@ -107,7 +107,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
     add_entities([ts])
     # Create a separate thread to read and print the TeSSLa output.
     tessla_reader_thread = threading.Thread(
-        target=TesslaReader(hass, tessla_process, specific_out, stream).output
+        target=TesslaReader(hass, tessla_process, specific_out, stream, archivo).output
     )
     # start thread
     tessla_reader_thread.start()
@@ -202,11 +202,12 @@ class TesslaSensor(SensorEntity):
 class TesslaReader:
     """The tesslareader class"""
 
-    def __init__(self, hass, tessla, spec, stream):
+    def __init__(self, hass, tessla, spec, stream, archivo):
         self.tessla = tessla
         self.hass = hass
         self.spec = spec
         self.stream = stream
+        self.archivo = archivo
 
     def output(self):
         """Handles the tessla output"""
@@ -221,8 +222,11 @@ class TesslaReader:
         for i in self.stream:
             s += i
             s += "_"
-
+        first_line = True
         for line in self.tessla.stdout:
+            if first_line:
+                self.archivo.close()
+                first_line = False
             _LOGGER.info(f"Tessla said: {line.strip()}.")
             parts = line.strip().split(" = ")
             if len(parts) != 2:
@@ -239,4 +243,3 @@ class TesslaReader:
 
             else:
                 _LOGGER.warning("Ignored event (No mapping for this output stream))")
-
