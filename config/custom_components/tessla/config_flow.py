@@ -120,7 +120,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         if type_state != tipo.lower():
                             error_message = (
                                 f"ERROR:The value of the entity{i+1} must be the type {tipo}\n"
-                                f"Tipo del Entity{i+1}({entity_input[i]}): {type_state}\n"
+                                f"Entity Type{i+1}({entity_input[i]}): {type_state}\n"
                             )
                             await show_error_notification(self.hass, error_message)
                             raise Exception(error_message)
@@ -128,7 +128,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     error_message = (
                         f"ERROR: Number of the chosen entity does not match the input number of the file specification.tessla\n"
                         f"entity: {entity_input}\n"
-                        f"Numeros de input del fichero: {len(index)}\n"
+                        f"Input number of the file: {len(index)}\n"
                     )
                     await show_error_notification(self.hass, error_message)
                 # add specification to data
@@ -140,4 +140,3 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=data_schema)
         except Exception as e:
             print(e)
-
