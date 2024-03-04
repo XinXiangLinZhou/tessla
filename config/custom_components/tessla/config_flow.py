@@ -92,8 +92,17 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     entity_input.insert(1, user_input[ENTITY_INPUT_2])
                 if user_input[ENTITY_INPUT_3] is not None:
                     entity_input.insert(2, user_input[ENTITY_INPUT_3])
-
                 d.update({"entity_input": entity_input})
+
+                # Error when number of stream and number of entity are direfent
+                if len(entity_input) != len(stream):
+                    error_message = (
+                        f"ERROR: Number of the chosen entity does not match number of stream\n"
+                        f"Entity: {entity_input}\n"
+                        f"Stream: {stream}\n"
+                    )
+                    await show_error_notification(self.hass, error_message)
+                    raise Exception(error_message)
                 # sacar el tipo del specification introducido
                 specification = user_input[TESSLA_SPEC_INPUT]
                 specific_string = "Events"
@@ -102,6 +111,15 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     for i in range(len(specification))
                     if specification.startswith(specific_string, i)
                 ]
+                # ERROR when Number of entity does not match the input number of the file specification.tessla
+                if len(entity_input) != len(index):
+                    error_message = (
+                        f"ERROR: Number of the chosen entity does not match the input number of the file specification.tessla\n"
+                        f"entity: {entity_input}\n"
+                        f"Input number of the file: {len(index)}\n"
+                    )
+                    await show_error_notification(self.hass, error_message)
+                    raise Exception(error_message)
                 if index:
                     for i, ind in enumerate(index):
                         sub_content = specification[ind + len(specific_string) :]
@@ -120,17 +138,12 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         if type_state != tipo.lower():
                             error_message = (
                                 f"ERROR:The value of the entity{i+1} must be the type {tipo}\n"
-                                f"Entity Type{i+1}({entity_input[i]}): {type_state}\n"
+                                f"State of entity{i+1}({entity_input[i]}):{state}\n"
+                                f"Type of entity{i+1}({entity_input[i]}): {type_state}\n"
                             )
                             await show_error_notification(self.hass, error_message)
                             raise Exception(error_message)
-                if len(entity_input) != len(index):
-                    error_message = (
-                        f"ERROR: Number of the chosen entity does not match the input number of the file specification.tessla\n"
-                        f"entity: {entity_input}\n"
-                        f"Input number of the file: {len(index)}\n"
-                    )
-                    await show_error_notification(self.hass, error_message)
+
                 # add specification to data
                 d.update({"tessla_spec_input": user_input[TESSLA_SPEC_INPUT]})
                 info = await validate_input(self.hass, d)
@@ -140,3 +153,4 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=data_schema)
         except Exception as e:
             print(e)
+
