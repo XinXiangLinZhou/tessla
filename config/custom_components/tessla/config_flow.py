@@ -14,8 +14,6 @@ ENTITY_INPUT_2 = "entity_input_2"
 ENTITY_INPUT_3 = "entity_input_3"
 STREAM_NAMES_INPUT = "stream_name_input_1"
 TESSLA_SPEC_INPUT = "tessla_spec_input"
-# TODO:
-# 1) Add the ability to configure multiple entities with corresponding stream names
 
 
 # error message
@@ -27,6 +25,7 @@ async def show_error_notification(hass, error_message):
     )
 
 
+# Add the ability to configure multiple entities with corresponding stream names
 async def validate_input(hass: HomeAssistant, data: dict) -> dict[str, Any]:
     """Validate the user input"""
     s = "["
@@ -82,16 +81,26 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     error_message = f"ERROR: The name of the streams must be diferent\n"
                     for i, s in enumerate(stream):
                         error_message += f"stream{i+1}:{s}\n"
-                    await show_error_notification(self.hass, error_message)
+                    raise Exception(error_message)
                 d.update({"stream": stream})
 
                 # add all entity_input to data
                 entity_input = []
-                entity_input.insert(0, user_input[ENTITY_INPUT_1])
+                if user_input[ENTITY_INPUT_1] is not None:
+                    entity_input.insert(0, user_input[ENTITY_INPUT_1])
+                else:
+                    error_message = f"ERROR: Must have an entity assigned\n"
+                    raise Exception(error_message)
                 if user_input[ENTITY_INPUT_2] is not None:
                     entity_input.insert(1, user_input[ENTITY_INPUT_2])
                 if user_input[ENTITY_INPUT_3] is not None:
                     entity_input.insert(2, user_input[ENTITY_INPUT_3])
+                # if assign same entitys return error
+                if has_duplicates(entity_input):
+                    error_message = f"ERROR: The entitys must be diferent\n"
+                    for i, e in enumerate(entity_input):
+                        error_message += f"Entity{i+1}:{e}\n"
+                    raise Exception(error_message)
                 d.update({"entity_input": entity_input})
 
                 # Error when number of stream and number of entity are direfent
@@ -101,7 +110,6 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         f"Entity: {entity_input}\n"
                         f"Stream: {stream}\n"
                     )
-                    await show_error_notification(self.hass, error_message)
                     raise Exception(error_message)
                 # sacar el tipo del specification introducido
                 specification = user_input[TESSLA_SPEC_INPUT]
@@ -118,7 +126,6 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         f"entity: {entity_input}\n"
                         f"Input number of the file: {len(index)}\n"
                     )
-                    await show_error_notification(self.hass, error_message)
                     raise Exception(error_message)
                 if index:
                     for i, ind in enumerate(index):
@@ -141,7 +148,6 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                                 f"State of entity{i+1}({entity_input[i]}):{state}\n"
                                 f"Type of entity{i+1}({entity_input[i]}): {type_state}\n"
                             )
-                            await show_error_notification(self.hass, error_message)
                             raise Exception(error_message)
 
                 # add specification to data
@@ -152,5 +158,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             return self.async_show_form(step_id="user", data_schema=data_schema)
         except Exception as e:
-            print(e)
+            error_message = str(e)
+            await show_error_notification(self.hass, error_message)
+            return self.async_abort(reason=e)
 
