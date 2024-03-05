@@ -139,6 +139,8 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             type_state = "int"
                         elif ("." in state) and (state.replace(".", "", 1).isdigit()):
                             type_state = "float"
+                        elif state=="true" or state=="false":
+                            type_state="bool"
                         else:
                             type_state = "string"
                         # comparar si son del mismo tipo
