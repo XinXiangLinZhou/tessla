@@ -169,14 +169,14 @@ async def async_setup_entry(hass, config_entry, add_entities):
         while True:
             # wait for listen events
             await event.wait()
+            # wait 1s
+            await asyncio.sleep(1)
             # order from smallest to largest
             timestamp_sort = sorted(data_timestamp.keys())
             for clave in timestamp_sort:
                 tessla_process.stdin.write(data_timestamp[clave])
             data_timestamp.clear()
             event.clear()
-            # wait 1s
-            await asyncio.sleep(1)
 
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
