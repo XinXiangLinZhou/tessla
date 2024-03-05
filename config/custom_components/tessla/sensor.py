@@ -134,6 +134,8 @@ async def async_setup_entry(hass, config_entry, add_entities):
             new_state.state.replace(".", "", 1).isdigit()
         ):
             coma = ""
+        elif new_state.state == "true" or new_state.state == "false":
+            coma = ""
         else:
             coma = '"'
         utc_timestamp = new_state.last_changed
