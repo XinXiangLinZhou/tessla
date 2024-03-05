@@ -116,6 +116,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
     ts.set_output_thread(tessla_reader_thread)
     # save timestamp
     data_timestamp = {}
+    event = asyncio.Event()
 
     async def _async_state_changed(entity_id, old_state, new_state):
         # get witch sensor of integration is change
@@ -140,28 +141,40 @@ async def async_setup_entry(hass, config_entry, add_entities):
             datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 10000
         )
         s = sensor.index(entity_id)
-        data_timestamp.update(
-            {
-                timestamp: f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
-            }
-        )
-        data_timestamp.update({timestamp + 1: f"{timestamp + 1}: h\n"})
-        # tessla_process.stdin.write(
-        #     # specific_in[0]=h
-        #     f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
-        #     f"{timestamp + 1}: h\n"
-        # )
+        # if they are the same timestamp, we need to add the value of this key into a dictionary.
+        if timestamp in data_timestamp:
+            data_timestamp[
+                timestamp
+            ] += f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+        else:
+            data_timestamp.update(
+                {
+                    timestamp: f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+                }
+            )
+        if timestamp + 1 in data_timestamp:
+            data_timestamp[timestamp + 1] += f"{timestamp+1}: h\n"
+        else:
+            data_timestamp.update({timestamp + 1: f"{timestamp+1}: h\n"})
+
+        # when we listen to the events
+        if len(data_timestamp) > 0:
+            event.set()
         _LOGGER.warning(f"Tessla notified, value: {new_state}")
-        _LOGGER.warning(f"{timestamp}: x = {coma}{(new_state.state)}{coma}\n")
+        _LOGGER.warning(
+            f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+        )
 
     async def event_listener():
         while True:
+            # wait for listen events
+            await event.wait()
             # order from smallest to largest
             timestamp_sort = sorted(data_timestamp.keys())
             for clave in timestamp_sort:
                 tessla_process.stdin.write(data_timestamp[clave])
-                print(data_timestamp[clave])
             data_timestamp.clear()
+            event.clear()
             # wait 1s
             await asyncio.sleep(1)
 
@@ -169,7 +182,9 @@ async def async_setup_entry(hass, config_entry, add_entities):
     # TODO: do this for every entity in the config_entry
     for s in sensor:
         async_track_state_change(hass, s, _async_state_changed)
-    await event_listener()
+
+    # start event_listener
+    asyncio.create_task(event_listener())
 
 
 class TesslaSensor(SensorEntity):
@@ -181,7 +196,6 @@ class TesslaSensor(SensorEntity):
         self._state = "-1"
         self.tessla = process
         self.t = None
-        self.running = False
 
     def set_output_thread(self, t):
         """Set the output thread"""
@@ -193,9 +207,6 @@ class TesslaSensor(SensorEntity):
 
     @property
     def state(self):
-        if not self.running and self.t is not None:
-            self.running = True
-            self._state = "Running"
         return self._state
 
 
@@ -211,7 +222,7 @@ class TesslaReader:
 
     def output(self):
         """Handles the tessla output"""
-        _LOGGER.info("Waiting for Tessla output.")
+        _LOGGER.debug("Waiting for Tessla output.")
         # TODO: Replace this with the list from the config entry
 
         # add stream to ostreams for output
