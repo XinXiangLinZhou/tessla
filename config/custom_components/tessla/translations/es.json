@@ -1,0 +1,18 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                      "entity_input_1": "Entidad 1",
+                      "entity_input_2": "Entidad 2",
+                      "entity_input_3": "Entidad 3",
+                      "stream_name_input_1": "Stream",
+                      "tessla_spec_input": "Especificación de Tessla"
+                },
+                "description": "Intruducir los streams separados por coma, seleccionar las entidades y introducir el contenido para el fichero de especificación. Debes seleccionar al menos una entidad. El número de streams introducidos debe ser igual al numero de entidades seleccionados.",
+                "title": "Configura TeSSLa"
+            }
+        }
+    },
+    "title": "TeSSLa"
+  }
