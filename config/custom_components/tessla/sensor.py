@@ -122,8 +122,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
         # get witch sensor of integration is change
         if new_state is None:
             return
-        if old_state is None:
-            return
         # when state of sensor =unknown or none
         if new_state.state == "unavailable" or new_state.state == "unknown":
             return
@@ -171,8 +169,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
         while True:
             # wait for listen events
             await event.wait()
-            # wait 1s
-            await asyncio.sleep(1)
             # order from smallest to largest
             timestamp_sort = sorted(data_timestamp.keys())
             for clave in timestamp_sort:
@@ -182,6 +178,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
+
     for s in sensor:
         async_track_state_change(hass, s, _async_state_changed)
 
@@ -256,3 +253,4 @@ class TesslaReader:
 
             else:
                 _LOGGER.warning("Ignored event (No mapping for this output stream))")
+
