@@ -118,25 +118,22 @@ async def async_setup_entry(hass, config_entry, add_entities):
     data_timestamp = {}
     event = asyncio.Event()
 
-    async def _async_state_changed(entity_id, old_state, new_state):
-        # get witch sensor of integration is change
-        if new_state is None:
-            return
-        # when state of sensor =unknown or none
-        if new_state.state == "unavailable" or new_state.state == "unknown":
+    def add_data_timestamp(sensor_value, entity_id):
+        # when state of sensor =unknown or unavailable
+        if sensor_value.state == "unavailable" or sensor_value.state == "unknown":
             return
         # when sensor state is the type string, we need add ""
-        if new_state.state.isdigit():
+        if sensor_value.state.isdigit():
             coma = ""
-        elif ("." in new_state.state) and (
-            new_state.state.replace(".", "", 1).isdigit()
+        elif ("." in sensor_value.state) and (
+            sensor_value.state.replace(".", "", 1).isdigit()
         ):
             coma = ""
-        elif new_state.state == "true" or new_state.state == "false":
+        elif sensor_value.state == "true" or sensor_value.state == "false":
             coma = ""
         else:
             coma = '"'
-        utc_timestamp = new_state.last_changed
+        utc_timestamp = sensor_value.last_changed
         timestamp = round(
             datetime.datetime.fromisoformat(str(utc_timestamp)).timestamp() * 10000
         )
@@ -145,11 +142,11 @@ async def async_setup_entry(hass, config_entry, add_entities):
         if timestamp in data_timestamp:
             data_timestamp[
                 timestamp
-            ] += f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+            ] += f"{timestamp}: {specific_in[s+1]} = {coma}{(sensor_value.state)}{coma}\n"
         else:
             data_timestamp.update(
                 {
-                    timestamp: f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+                    timestamp: f"{timestamp}: {specific_in[s+1]} = {coma}{(sensor_value.state)}{coma}\n"
                 }
             )
         if timestamp + 1 in data_timestamp:
@@ -160,10 +157,16 @@ async def async_setup_entry(hass, config_entry, add_entities):
         # when we listen to the events
         if len(data_timestamp) > 0:
             event.set()
-        _LOGGER.warning(f"Tessla notified, value: {new_state}")
+        _LOGGER.warning(f"Tessla notified, value: {sensor_value}")
         _LOGGER.warning(
-            f"{timestamp}: {specific_in[s+1]} = {coma}{(new_state.state)}{coma}\n"
+            f"{timestamp}: {specific_in[s+1]} = {coma}{(sensor_value.state)}{coma}\n"
         )
+
+    async def _async_state_changed(entity_id, old_state, new_state):
+        # get witch sensor of integration is change
+        if new_state is None:
+            return
+        add_data_timestamp(new_state, entity_id)
 
     async def event_listener():
         while True:
@@ -176,6 +179,16 @@ async def async_setup_entry(hass, config_entry, add_entities):
             data_timestamp.clear()
             event.clear()
 
+    list_entity_id = []
+    for i, entity in enumerate(hass.states.async_all()):
+        list_entity_id.insert(i, entity.entity_id)
+
+    # when the initial value of the sensor is not unknown
+    # we add the value to the list of data_timestamp for the output
+    # we don't need to wait until the value changes
+    for s in sensor:
+        if s in list_entity_id:
+            add_data_timestamp(hass.states.get(s), s)
     # Register a state change listener for the "sensor.random_sensor" entity
     # TODO: do this for every entity in the config_entry
 
