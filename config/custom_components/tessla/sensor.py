@@ -235,7 +235,6 @@ class TesslaReader:
     def output(self):
         """Handles the tessla output"""
         _LOGGER.debug("Waiting for Tessla output.")
-        # TODO: Replace this with the list from the config entry
 
         # add stream to ostreams for output
         ostreams = {}
@@ -261,9 +260,10 @@ class TesslaReader:
                 value = parts[1]
                 entity_id = f"{DOMAIN}.{s}{ostreams[output_name]}"
                 entity_state = value.strip()
+                if entity_state == "()":
+                    entity_state = 0
                 self.hass.states.set(entity_id, entity_state)
                 _LOGGER.info("Update entity: %s=%s", entity_id, entity_state)
 
             else:
                 _LOGGER.warning("Ignored event (No mapping for this output stream))")
-
