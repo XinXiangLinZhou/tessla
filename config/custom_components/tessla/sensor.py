@@ -5,7 +5,7 @@ import logging
 import datetime
 import os
 import tempfile
-
+from homeassistant.core import HomeAssistant
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_state_change
 from pathlib import Path
@@ -16,7 +16,7 @@ import asyncio
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry, add_entities):
     """Set up the tessla platform"""
     # Start the TeSSLa interpreter process with the given specification file.
     # the spec file needs to be correctly updated before starting the process
@@ -90,8 +90,6 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     _LOGGER.warning(f"Config entry said: {config_entry.data}")
 
-    # TODO: Config flow:
-
     # 2) Create a list of the the entities with corresponding stream names.
     # 3) Add entities in HA.
     # 4) Refactor the code below by removing all hardcoded stuff, everything should be set up from the config entry
@@ -120,7 +118,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
 
     def add_data_timestamp(sensor_value, entity_id):
         # when state of sensor =unknown or unavailable
-        if sensor_value.state == "unavailable" or sensor_value.state == "unknown":
+        if sensor_value.state in ("unavailable", "unknown"):
             return
         # when sensor state is the type string, we need add ""
         if sensor_value.state.isdigit():
@@ -129,7 +127,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
             sensor_value.state.replace(".", "", 1).isdigit()
         ):
             coma = ""
-        elif sensor_value.state == "true" or sensor_value.state == "false":
+        elif sensor_value.state in ("true", "false"):
             coma = ""
         else:
             coma = '"'
@@ -189,8 +187,7 @@ async def async_setup_entry(hass, config_entry, add_entities):
     for s in sensor:
         if s in list_entity_id:
             add_data_timestamp(hass.states.get(s), s)
-    # Register a state change listener for the "sensor.random_sensor" entity
-    # TODO: do this for every entity in the config_entry
+    # Register a state change listener for the entity
 
     for s in sensor:
         async_track_state_change(hass, s, _async_state_changed)
@@ -204,7 +201,7 @@ class TesslaSensor(SensorEntity):
 
     _attr_should_poll = False
 
-    def __init__(self, hass, process):
+    def __init__(self, hass: HomeAssistant, process) -> None:
         self._state = "-1"
         self.tessla = process
         self.t = None
@@ -225,7 +222,7 @@ class TesslaSensor(SensorEntity):
 class TesslaReader:
     """The tesslareader class"""
 
-    def __init__(self, hass, tessla, spec, stream, archivo):
+    def __init__(self, hass: HomeAssistant, tessla, spec, stream, archivo) -> None:
         self.tessla = tessla
         self.hass = hass
         self.spec = spec
@@ -234,7 +231,7 @@ class TesslaReader:
 
     def output(self):
         """Handles the tessla output"""
-        _LOGGER.debug("Waiting for Tessla output.")
+        _LOGGER.debug("Waiting for Tessla output")
 
         # add stream to ostreams for output
         ostreams = {}
@@ -249,7 +246,7 @@ class TesslaReader:
             if first_line:
                 self.archivo.close()
                 first_line = False
-            _LOGGER.info(f"Tessla said: {line.strip()}.")
+            _LOGGER.info(f"Tessla said: {line.strip()}")
             parts = line.strip().split(" = ")
             if len(parts) != 2:
                 _LOGGER.warning("Invalid output format from Tessla: %s", line.strip())
