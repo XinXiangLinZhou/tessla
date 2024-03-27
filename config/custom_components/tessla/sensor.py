@@ -177,11 +177,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, add_entities):
             data_timestamp.clear()
             event.clear()
 
+    list_entity_id = []
+    for i, entity in enumerate(hass.states.async_all()):
+        list_entity_id.insert(i, entity.entity_id)
     # when the initial value of the sensor is not unknown
     # we add the value to the list of data_timestamp for the output
     # we don't need to wait until the value changes
     for s in sensor:
-        if s in hass.states.async_all():
+        if s in list_entity_id:
             add_data_timestamp(hass.states.get(s), s)
 
     # Register a state change listener for the entity
