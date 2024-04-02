@@ -24,10 +24,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, add_entities):
 
     dir_spec_file = os.path.join("config", "custom_components", "tessla")
 
-    tessla_spec_file = os.path.join(
-        "config", "custom_components", "tessla", "specification.tessla"
-    )
-
     tessla_jar_file = os.path.join(
         "config", "custom_components", "tessla", "tessla.jar"
     )
