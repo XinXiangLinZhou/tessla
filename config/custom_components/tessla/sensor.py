@@ -176,13 +176,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, add_entities):
     list_entity_id = []
     for i, entity in enumerate(hass.states.async_all()):
         list_entity_id.insert(i, entity.entity_id)
+
     # when the initial value of the sensor is not unknown
     # we add the value to the list of data_timestamp for the output
     # we don't need to wait until the value changes
     for s in sensor:
         if s in list_entity_id:
             add_data_timestamp(hass.states.get(s), s)
-
     # Register a state change listener for the entity
     for s in sensor:
         async_track_state_change(hass, s, _async_state_changed)
@@ -254,6 +254,10 @@ class TesslaReader:
                 entity_state = value.strip()
                 if entity_state == "()":
                     entity_state = 0
+                if entity_state == "true":
+                    entity_state = "on"
+                elif entity_state == "false":
+                    entity_state = "off"
                 self.hass.states.set(entity_id, entity_state)
                 _LOGGER.info("Update entity: %s=%s", entity_id, entity_state)
 
