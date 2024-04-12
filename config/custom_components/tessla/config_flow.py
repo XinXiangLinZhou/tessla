@@ -2,6 +2,7 @@ import voluptuous as vol
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
+import re
 from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant import config_entries
@@ -114,10 +115,20 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 # sacar el tipo del specification introducido
                 specification = user_input[TESSLA_SPEC_INPUT]
                 specific_string = "Events"
+                p = specification.split()
+                n = []
+                p_s = ["in", "def", "out"]
+                for i in p:
+                    if i in p_s:
+                        n.append(f"\n{i}")
+                    else:
+                        n.append(f" {i}")
+                result = "".join(n)
                 index = [
-                    i
-                    for i in range(len(specification))
-                    if specification.startswith(specific_string, i)
+                    re.findall(r"\[(.+?)\]", linea)[0]
+                    for linea in result.split("\n")
+                    if re.findall(r"^in\s(.+?)(:)", linea)
+                    and re.findall(r"\[(.+?)\]", linea)
                 ]
                 # ERROR when Number of entity does not match the input number of the file specification.tessla
                 if len(entity_input) != len(index):
@@ -129,10 +140,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     raise ValueError(error_message)
                 if index:
                     for i, ind in enumerate(index):
-                        sub_content = specification[ind + len(specific_string) :]
-                        substring = sub_content.split(" ")[0]
-                        tipo = substring.strip("[]")
-
+                        tipo = ind
                         # guardar el tipo del valor del entity
                         state = self.hass.states.get(entity_input[i]).state
                         if state.isdigit():
@@ -163,5 +171,3 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             error_message = str(e)
             await show_error_notification(self, error_message)
             return self.async_abort(reason=e)
-
-
