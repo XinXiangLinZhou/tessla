@@ -184,6 +184,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, add_entities):
         if s in list_entity_id:
             add_data_timestamp(hass.states.get(s), s)
     # Register a state change listener for the entity
+
     for s in sensor:
         async_track_state_change(hass, s, _async_state_changed)
 
@@ -254,9 +255,9 @@ class TesslaReader:
                 entity_state = value.strip()
                 if entity_state == "()":
                     entity_state = 0
-                if entity_state == "true":
+                if entity_state.lower() == "true":
                     entity_state = "on"
-                elif entity_state == "false":
+                elif entity_state.lower() == "false":
                     entity_state = "off"
                 self.hass.states.set(entity_id, entity_state)
                 _LOGGER.info("Update entity: %s=%s", entity_id, entity_state)
