@@ -62,7 +62,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors = {}
 
             if user_input is not None:
-                # guardar todos los datos introducido por el usuario a un nuevo diccionario
+                # Save all data entered by the user to a new dictionary
                 d = dict()
                 stream = []
                 # add stream to data
@@ -112,9 +112,8 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         f"Stream: {stream}\n"
                     )
                     raise ValueError(error_message)
-                # sacar el tipo del specification introducido
+                # get the type of the entered specification
                 specification = user_input[TESSLA_SPEC_INPUT]
-                specific_string = "Events"
                 p = specification.split()
                 n = []
                 p_s = ["in", "def", "out"]
@@ -124,24 +123,23 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     else:
                         n.append(f" {i}")
                 result = "".join(n)
-                index = [
+                spec_type = [
                     re.findall(r"\[(.+?)\]", linea)[0]
                     for linea in result.split("\n")
                     if re.findall(r"^in\s(.+?)(:)", linea)
                     and re.findall(r"\[(.+?)\]", linea)
                 ]
                 # ERROR when Number of entity does not match the input number of the file specification.tessla
-                if len(entity_input) != len(index):
+                if len(entity_input) != len(spec_type):
                     error_message = (
                         f"ERROR: Number of the chosen entity does not match the input number of the file specification.tessla\n"
                         f"entity: {entity_input}\n"
-                        f"Input number of the file: {len(index)}\n"
+                        f"Input number of the file: {len(spec_type)}\n"
                     )
                     raise ValueError(error_message)
-                if index:
-                    for i, ind in enumerate(index):
-                        tipo = ind
-                        # guardar el tipo del valor del entity
+                if spec_type:
+                    for i, tipo in enumerate(spec_type):
+                        # save the type of the entity value
                         state = self.hass.states.get(entity_input[i]).state
                         if state.isdigit():
                             type_state = "int"
@@ -151,7 +149,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             type_state = "bool"
                         else:
                             type_state = "string"
-                        # comparar si son del mismo tipo
+                        # Error when they are the different type
                         if type_state != tipo.lower():
                             error_message = (
                                 f"ERROR:The value of the entity{i+1} must be the type {tipo}\n"
