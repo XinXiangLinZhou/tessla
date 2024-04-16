@@ -9,7 +9,7 @@
                       "stream_name_input_1": "Stream",
                       "tessla_spec_input": "TeSSLa Specification"
                 },
-                "description": "Enter the streams separated by commas, select the entities and enter the content for the specification file. You must select at least one entity. The number of streams entered must be equal to the number of entities selected.",
+                "description": "Enter the streams separated by commas, select the entities and enter the content for the specification file. You must select at least one entity. The number of streams entered must be equal to the number of entities selected.  And TeSSLa code with comments is NOT allowed.",
                 "title": "Configure TeSSLa"
             }
         }
