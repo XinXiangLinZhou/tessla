@@ -255,9 +255,9 @@ class TesslaReader:
                 entity_state = value.strip()
                 if entity_state == "()":
                     entity_state = 0
-                if entity_state.lower() == "true":
+                if entity_state == "true":
                     entity_state = "on"
-                elif entity_state.lower() == "false":
+                elif entity_state == "false":
                     entity_state = "off"
                 self.hass.states.set(entity_id, entity_state)
                 _LOGGER.info("Update entity: %s=%s", entity_id, entity_state)
