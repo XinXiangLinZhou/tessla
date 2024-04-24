@@ -36,18 +36,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry, add_entities):
         archivo = tempfile.NamedTemporaryFile(
             mode="r+", prefix="tempo_", dir=dir_spec_file, delete=True
         )
-        p = specification.split()
-        n = []
-        p_s = ["in", "def", "out"]
-        for i in p:
-            if i in p_s:
-                n.append(f"\n{i}")
-            else:
-                n.append(f" {i}")
-
-        result = "".join(n)
         archivo.write("in h: Events[Unit]")
-        archivo.write(result)
+        archivo.write(specification)
         archivo.flush()
 
         _LOGGER.debug("escritura con exito")
@@ -264,3 +254,4 @@ class TesslaReader:
 
             else:
                 _LOGGER.warning("Ignored event (No mapping for this output stream))")
+                
