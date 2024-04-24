@@ -122,10 +122,10 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         n.append(f"\n{i}")
                     else:
                         n.append(f" {i}")
-                result = "".join(n)
+                spec = "".join(n)
                 spec_type = [
                     re.findall(r"\[(.+?)\]", linea)[0]
-                    for linea in result.split("\n")
+                    for linea in spec.split("\n")
                     if re.findall(r"^in\s(.+?)(:)", linea)
                     and re.findall(r"\[(.+?)\]", linea)
                 ]
@@ -159,7 +159,7 @@ class TesslaFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             raise ValueError(error_message)
 
                 # add specification to data
-                d.update({"tessla_spec_input": user_input[TESSLA_SPEC_INPUT]})
+                d.update({"tessla_spec_input": spec})
                 info = await validate_input(self.hass, d)
 
                 return self.async_create_entry(title=info["title"], data=d)
