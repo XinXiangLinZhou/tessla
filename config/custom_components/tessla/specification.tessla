@@ -1,5 +1,25 @@
-in x: Events[Int]
-def number = x + 5
-def diff = number > 10
-out diff
-out number
+def target_temperature = 21
+
+in room_temperature: Events[Int]
+in weather_forecast: Events[String]
+in electricity_prices: Events[Float]
+
+def kwh_price_budget = 0.10
+
+def t: Events[Unit] = period(1)
+
+def low = room_temperature <= target_temperature
+def high = room_temperature > target_temperature
+
+def is_cheap: Events[Bool] = electricity_prices <=. kwh_price_budget
+def is_expensive: Events[Bool] = electricity_prices >. kwh_price_budget
+
+def sunny = weather_forecast == "sunny"
+
+def switch_off_heater = high || sunny || is_expensive
+def heater = !switch_off_heater
+
+out high
+out sunny
+out is_expensive
+out heater
