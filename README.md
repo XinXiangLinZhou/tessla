@@ -1,5 +1,7 @@
 Manual sobre instalación de plugin
 
+Video de instrucciones de instalación del plugin: https://youtu.be/7NTs3w7aczA?si=8fuFMoVRaKMEBs5v
+
 -Preparación para la instalación
 
 Antes de todo, es necesario comprobar los siguientes requisitos para poder empezar
@@ -10,6 +12,7 @@ a instalar nuestro plugin:
   4. El intérprete de TeSSLa en forma de un archivo JAR llamado tessla.jar.
 
 -Instalación del plugin
+
   1. Ir al repositorio Core de Home Asisstant y crear una nueva rama.
      ![image](https://github.com/XinXiangLinZhou/tessla/assets/100683297/219612f8-7bd5-41cc-b0df-a88690c4820a)
 
@@ -23,6 +26,7 @@ a instalar nuestro plugin:
     Studio Code.
 
 -Uso del plugin
+
   1. Abre la página de Home Assistant y ve a Ajustes.
      ![image](https://github.com/XinXiangLinZhou/tessla/assets/100683297/5bf5bb26-e51a-49a9-b26b-218582034d16)
 
